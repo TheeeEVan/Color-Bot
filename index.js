@@ -3,7 +3,7 @@
 // Import modules
 const Discord = require('discord.js')
 const namer = require('color-namer')
-const isHexColor = require( 'validate.io-color-hexadecimal' )
+const isHexColor = require('validate.io-color-hexadecimal')
 const fs = require("fs")
 var colorRoles = require('./colorRoles.json')
 
@@ -12,25 +12,42 @@ const client = new Discord.Client()
 
 // init vars
 const prefix = "_"
+let regex = new RegExp("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
 
 client.on('ready', () => {
   console.log('I am ready!')
 })
 
 client.on('message', (msg) => {
+
+    // check if guild json data exists, otherwise create an entry 
     if (!colorRoles[msg.guild.id])
     {
         colorRoles[msg.guild.id] = {}
     }
 
-    if (msg.content.startsWith(prefix + "color"))
+    if (msg.content.startsWith(prefix + "help"))
     {
-        const HighestRole = msg.guild.me.roles.highest; // Your bot's highest role in the Guid.
+        msg.channel.send(new Discord.MessageEmbed()
+        .setTitle("Color Bot Help")
+        .setDescription("List of Commands")
+        .addFields(
+            { name: "Help", value: "This Command!"},
+            { name: "Color", value: "Gives you a new color"},
+            { name: "Reset", value: "Resets color to default (Or non color server assigned role)"},
+            { name: "Invite", value: "Sends the link to invite this bot to your server!"},
+        ))
+    }
+
+    // main color command
+    if (msg.content.startsWith(prefix + "color" || prefix + "colour"))
+    {
+        const HighestRole = msg.guild.me.roles.highest
 
         let args = msg.content.split(" ")
         let color
 
-        if (isHexColor(args[1]))
+        if (regex.test(args[1]))
         {   
             if (args[1].startsWith("#"))
             {
@@ -39,7 +56,7 @@ client.on('message', (msg) => {
                 color = namer("#" + args[1])
             }
 
-            if (colorRoles[msg.guild.id][msg.member.id])
+            if (colorRoles[msg.guild.id][msg.member.id] && colorRoles[msg.guild.id][msg.member.id] != null)
             {
                 let role = msg.guild.roles.cache.find(x => x.name === colorRoles[msg.guild.id][msg.member.id])
                 msg.member.roles.remove(role.id)
@@ -53,7 +70,7 @@ client.on('message', (msg) => {
                     data: {
                     name: roleName,
                     color: color.ntc[0].hex,
-                    hoist: true,
+                    hoist: false,
                     position: HighestRole.position
                     }
                 })
@@ -73,8 +90,29 @@ client.on('message', (msg) => {
             .setTimestamp())
 
         } else {
-            msg.reply("That's not a valid hex color! Make sure to include all six characters.")
+            msg.reply("That's not a valid hex color! Make sure to include a #")
         }
+    }
+
+    // reset color to no custom color
+    if (msg.content.startsWith(prefix + "reset"))
+    {
+        if (colorRoles[msg.guild.id][msg.member.id] && colorRoles[msg.guild.id][msg.member.id] != null)
+            {
+                let role = msg.guild.roles.cache.find(x => x.name === colorRoles[msg.guild.id][msg.member.id])
+                msg.member.roles.remove(role.id)
+            }
+        colorRoles[msg.guild.id][msg.member.id] = null
+
+        msg.channel.send(new Discord.MessageEmbed()
+        .setTitle("Reset your color!")
+        .setTimestamp())
+    }
+
+    if (msg.content.startsWith(prefix + "invite"))
+    {
+        msg.channel.send(new Discord.MessageEmbed()
+        .addField("Invite Link:", "[Here!](https://discord.com/api/oauth2/authorize?client_id=839151013167366154&permissions=268437504&scope=bot)"))
     }
 
     fs.writeFile("colorRoles.json", JSON.stringify(colorRoles), err => {
