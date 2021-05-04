@@ -1,23 +1,21 @@
 'use strict';
 
 // Import modules
-const Discord = require('discord.js');
+const Discord = require('discord.js')
 const namer = require('color-namer')
-const isHexColor = require( 'validate.io-color-hexadecimal' );
-const fs = require("fs");
+const isHexColor = require( 'validate.io-color-hexadecimal' )
+const fs = require("fs")
 var colorRoles = require('./colorRoles.json')
 
-console.log(colorRoles)
-
 // Create an instance of a Discord client
-const client = new Discord.Client();
+const client = new Discord.Client()
 
 // init vars
 const prefix = "_"
 
 client.on('ready', () => {
-  console.log('I am ready!');
-});
+  console.log('I am ready!')
+})
 
 client.on('message', (msg) => {
     if (!colorRoles[msg.guild.id])
@@ -43,12 +41,10 @@ client.on('message', (msg) => {
 
             if (colorRoles[msg.guild.id][msg.member.id])
             {
-                console.log("has entry")
                 let role = msg.guild.roles.cache.find(x => x.name === colorRoles[msg.guild.id][msg.member.id])
                 msg.member.roles.remove(role.id)
             }
             colorRoles[msg.guild.id][msg.member.id] = color.ntc[0].name
-            console.log(colorRoles)
 
             let roleName = color.ntc[0].name;
             let role = msg.guild.roles.cache.find(x => x.name === roleName);
@@ -62,7 +58,7 @@ client.on('message', (msg) => {
                     }
                 })
                 .then(r => msg.member.roles.add(r))
-                .catch(console.error);
+                .catch(console.error)
             } 
             
             else {
@@ -84,9 +80,9 @@ client.on('message', (msg) => {
     fs.writeFile("colorRoles.json", JSON.stringify(colorRoles), err => {
      
         // Checking for errors
-        if (err) throw err; 
+        if (err) throw err
     });
 })
 
 // Log our bot in using the token from https://discord.com/developers/applications
-client.login('ODM5MTUxMDEzMTY3MzY2MTU0.YJFeSA.cia-EGMmJ8_uw7UpJ7K6Wtpe4Eg');
+client.login('ODM5MTUxMDEzMTY3MzY2MTU0.YJFeSA.cia-EGMmJ8_uw7UpJ7K6Wtpe4Eg')
