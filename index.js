@@ -6,6 +6,8 @@ const namer = require('color-namer')
 const isHexColor = require('validate.io-color-hexadecimal')
 const fs = require("fs")
 var colorRoles = require('./colorRoles.json')
+var allColors = require('./colors.json')
+var settings = require('./settings.json')
 
 // Create an instance of a Discord client
 const client = new Discord.Client()
@@ -25,6 +27,11 @@ client.on('message', (msg) => {
         if (!colorRoles[msg.guild.id])
         {
             colorRoles[msg.guild.id] = {}
+        } 
+        
+        if (!allColors[msg.guild.id])
+        {
+            allColors[msg.guild.id] = []
         }
 
         if (msg.content.startsWith(prefix + "help"))
@@ -37,6 +44,7 @@ client.on('message', (msg) => {
                 { name: "Color", value: "Gives you a new color"},
                 { name: "Reset", value: "Resets color to default (Or non color server assigned role)"},
                 { name: "Invite", value: "Sends the link to invite this bot to your server!"},
+                { name: "Settings", value: "Server settings for the bot. Can be viewed by anyone. Can be edited if you have Manage Roles. (This is planned but not yet implemeted)"},
             ))
         }
 
@@ -76,6 +84,7 @@ client.on('message', (msg) => {
                             }
                         })
                         .then(r => msg.member.roles.add(r))
+                        .then(() => allColors[msg.guild.id].push(color.ntc[0].name))
                         .catch(console.error)
                     } 
                     
@@ -111,6 +120,7 @@ client.on('message', (msg) => {
             .setTimestamp())
         }
 
+        // send a link to invite the bot
         if (msg.content.startsWith(prefix + "invite"))
         {
             msg.channel.send(new Discord.MessageEmbed()
@@ -118,7 +128,14 @@ client.on('message', (msg) => {
         }
     }
 
+    // write all updates
     fs.writeFile("colorRoles.json", JSON.stringify(colorRoles), err => {
+     
+        // Checking for errors
+        if (err) throw err
+    });
+
+    fs.writeFile("colors.json", JSON.stringify(allColors), err => {
      
         // Checking for errors
         if (err) throw err
