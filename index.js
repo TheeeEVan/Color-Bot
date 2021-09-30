@@ -1,5 +1,8 @@
 'use strict';
 
+// init enviroment vars
+require('dotenv').config()
+
 // Import modules
 const Discord = require('discord.js')
 const namer = require('color-namer')
@@ -143,4 +146,4 @@ client.on('message', (msg) => {
 })
 
 // Log our bot in using the token from https://discord.com/developers/applications
-client.login('ODM5MTUxMDEzMTY3MzY2MTU0.YJFeSA.cia-EGMmJ8_uw7UpJ7K6Wtpe4Eg')
+client.login(process.env.TOKEN)
