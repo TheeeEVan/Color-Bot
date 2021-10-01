@@ -13,6 +13,11 @@ const fs = require("fs")
 const prefix = "_"
 const regex = new RegExp("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
 
+// import saved data
+var userColors = require('./userColors.json')
+var serverSettings = require('./serverSettings.json')
+var allRoles = require('./allRoles.json')
+
 // create discord client
 const client = new DiscordJS.Client({
     intents: [
@@ -40,9 +45,38 @@ client.on('ready', () => {
         name: 'help',
         description: 'Gives a list of commands and their functions.'
     })
+
+    commands?.create({
+        name: 'color',
+        description: 'Changes your color to the provided hex code',
+        options: [
+            {
+                name: 'color',
+                description: 'Hex code of the wanted color',
+                required: true,
+                type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING
+            }
+        ]
+    })
 })
 
 client.on('messageCreate', (message) => {
+    // check if guild json data exists, otherwise create an entry     
+    if (!userColors[message.guild.id])
+    {
+        userColors[message.guild.id] = {}
+    }
+
+    if (!serverSettings[message.guild.id])
+    {
+        serverSettings[message.guild.id] = {}
+    }
+
+    if (!allRoles[message.guild.id])
+    {
+        allRoles[message.guild.id] = {}
+    }
+
     // check if message uses prefix
     if (message.content.startsWith(prefix))
     {
@@ -51,6 +85,7 @@ client.on('messageCreate', (message) => {
         command.shift()
         
         // check for commands
+        // help command
         if (command[0] == "help")
         {
             if (command[1] == "admin")
@@ -83,6 +118,87 @@ client.on('messageCreate', (message) => {
                 })
             }
         }
+
+        // color command
+        if (command[0] == "color")
+        {
+            const HighestRole = message.guild.me.roles.highest
+
+            let color
+
+            if (regex.test(command[1]))
+            {
+                if (command[1].startsWith("#"))
+                {
+                    color = colorNamer(command[1])
+                } else {
+                    color = colorNamer("#" + command[1])
+                }
+
+                if (userColors[message.guild.id][message.member.id] != null)
+                {
+                    let role = message.guild.roles.cache.find(x => x.name === userColors[message.guild.id][message.member.id])
+                    message.member.roles.remove(role.id)
+                    allRoles[message.guild.id][role.name]--
+                }
+
+                let roleName = color.ntc[0].name
+                let role = message.guild.roles.cache.find(x => x.name === roleName)
+                if (role == undefined)
+                {
+                    message.guild.roles.create({
+                        name: roleName,
+                        color: color.ntc[0].hex,
+                        hoist: false,
+                        position: HighestRole.position
+                    })
+                    .then(r => message.member.roles.add(r))
+                    .catch(console.error)
+
+                    allRoles[message.guild.id][roleName] = 1
+                }
+
+                else {
+                    message.member.roles.add(role.id)    
+                    allRoles[message.guild.id][roleName]++
+                }
+                
+                userColors[message.guild.id][message.member.id] = color.ntc[0].name
+
+                message.channel.send({
+                    embeds: [
+                        new DiscordJS.MessageEmbed()
+                            .setColor(color.ntc[0].hex)
+                            .setTitle("Color Role Added!")
+                            .setDescription("Your color is now " + color.ntc[0].name + " (#" + color.ntc[0].hex + ")")
+                            .setFooter("The bot gives the closest color with a name")
+                            .setTimestamp()
+                    ]
+                })
+            } else {
+                message.reply("That's not a valid hex color! Make sure to include a #")
+            }
+
+            message.delete()
+        }
+
+        // write all updates
+        fs.writeFile("userColors.json", JSON.stringify(userColors), err => {
+        
+            // Checking for errors
+            if (err) throw err
+        });
+
+        fs.writeFile("serverSettings.json", JSON.stringify(serverSettings), err => {
+    
+            // Checking for errors
+            if (err) throw err
+        });
+
+        fs.writeFile("allRoles.json", JSON.stringify(allRoles), err => {
+            // Checking for errors
+            if (err) throw err
+        })
     }
 })
 
@@ -93,8 +209,24 @@ client.on('interactionCreate', async (interaction) => {
         return
     }
 
-    const { commandName, options, channel } = interaction
+    const { commandName, options, channel, guild } = interaction
+    
+    if (!userColors[guild.id])
+    {
+        userColors[guild.id] = {}
+    }
 
+    if (!serverSettings[guild.id])
+    {
+        serverSettings[guild.id] = {}
+    }
+
+    if (!allRoles[guild.id])
+    {
+        allRoles[guild.id] = {}
+    }
+
+    // help command
     if (commandName == "help")
     {
         const row = new MessageActionRow()
@@ -144,6 +276,90 @@ client.on('interactionCreate', async (interaction) => {
             })
         })
     }
+
+    if (commandName == "color")
+    {   
+        const colorOption = options.getString('color')
+        const HighestRole = guild.me.roles.highest
+
+        let user = interaction.member.user.id
+        let member = client.guilds.cache.get(interaction.guild.id).members.cache.get(user)
+
+            let color
+
+            if (regex.test(colorOption))
+            {
+                if (colorOption.startsWith("#"))
+                {
+                    color = colorNamer(colorOption)
+                } else {
+                    color = colorNamer("#" + colorOption)
+                }
+
+                if (userColors[guild.id][member.id] != null)
+                {
+                    let role = guild.roles.cache.find(x => x.name === userColors[guild.id][member.user.id])
+                    member.roles.remove(role.id)
+                    allRoles[guild.id][role.name]--
+                }
+
+                let roleName = color.ntc[0].name
+                let role = guild.roles.cache.find(x => x.name === roleName)
+                if (role == undefined)
+                {
+                    guild.roles.create({
+                        name: roleName,
+                        color: color.ntc[0].hex,
+                        hoist: false,
+                        position: HighestRole.position
+                    })
+                    .then(r => member.roles.add(r))
+                    .catch(console.error)
+
+                    allRoles[guild.id][roleName] = 1
+                }
+
+                else {
+                    member.roles.add(role.id)    
+                    allRoles[guild.id][roleName]++
+                }
+                
+                userColors[guild.id][member.id] = color.ntc[0].name
+
+                interaction.reply({
+                    embeds: [
+                        new DiscordJS.MessageEmbed()
+                            .setColor(color.ntc[0].hex)
+                            .setTitle("Color Role Added!")
+                            .setDescription("Your color is now " + color.ntc[0].name + " (#" + color.ntc[0].hex + ")")
+                            .setFooter("The bot gives the closest color with a name")
+                            .setTimestamp()
+                    ],
+                    ephemeral: false
+                })
+            } else {
+                interaction.reply({
+                    content: "That's not a valid hex color! Make sure to include a #",
+                    ephemeral: true
+                })
+            }
+    }
+
+    // write all updates
+    fs.writeFile("userColors.json", JSON.stringify(userColors), err => {
+        // Checking for errors
+        if (err) throw err
+    });
+
+    fs.writeFile("serverSettings.json", JSON.stringify(serverSettings), err => {
+        // Checking for errors
+        if (err) throw err
+    });
+
+    fs.writeFile("allRoles.json", JSON.stringify(allRoles), err => {
+        // Checking for errors
+        if (err) throw err
+    })
 })
 
 client.login(process.env.TOKEN)
