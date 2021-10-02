@@ -29,17 +29,8 @@ const client = new DiscordJS.Client({
 
 client.on('ready', () => {
     console.log("Color Bot is Running!")
-
-    // setup guild command, if guild unavailbile make global command manager
-    const guildId = "892598403639443526"
-    const guild = client.guilds.cache.get(guildId)
     let commands
-
-    if (guild) {
-        commands = guild.commands
-    } else {
-        commands = client.application?.commands
-    }
+    commands = client.application?.commands
 
     commands?.create({
         name: 'help',
