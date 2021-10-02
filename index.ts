@@ -48,7 +48,7 @@ client.on('ready', () => {
 
     commands?.create({
         name: 'color',
-        description: 'Changes your color to the provided hex code',
+        description: 'Changes your color to the provided hex code.',
         options: [
             {
                 name: 'color',
@@ -57,6 +57,16 @@ client.on('ready', () => {
                 type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING
             }
         ]
+    })
+
+    commands?.create({
+        name: 'reset',
+        description: 'Reset your color to the server default.'
+    })
+
+    commands?.create({
+        name: 'invite',
+        description: 'Sends Color Bot invite link.'
     })
 })
 
@@ -182,6 +192,33 @@ client.on('messageCreate', (message) => {
             message.delete()
         }
 
+        else if (command[0] == "reset")
+        {
+            if (userColors[message.guild.id][message.member.id] != null)
+            {
+                let role = message.guild.roles.cache.find(x => x.name == userColors[message.guild.id][message.member.id])
+                message.member.roles.remove(role.id)
+                allRoles[message.guild.id][role.name]--
+                delete userColors[message.guild.id][message.member.id]
+
+                message.channel.send({
+                    embeds: [
+                        new DiscordJS.MessageEmbed()
+                        .setTitle("Reset your color!")
+                        .setColor(randomHex.generate())
+                        .setTimestamp()
+                    ]
+                })
+            }
+        }
+
+        if (command[0] == "invite")
+        {
+            message.reply({
+                content: "https://discord.com/api/oauth2/authorize?client_id=839151013167366154&permissions=275146385408&scope=bot%20applications.commands"
+            })
+        }
+
         // write all updates
         fs.writeFile("userColors.json", JSON.stringify(userColors), err => {
         
@@ -210,6 +247,9 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     const { commandName, options, channel, guild } = interaction
+
+    let user = interaction.member.user.id
+    let member = client.guilds.cache.get(interaction.guild.id).members.cache.get(user)
     
     if (!userColors[guild.id])
     {
@@ -282,9 +322,6 @@ client.on('interactionCreate', async (interaction) => {
         const colorOption = options.getString('color')
         const HighestRole = guild.me.roles.highest
 
-        let user = interaction.member.user.id
-        let member = client.guilds.cache.get(interaction.guild.id).members.cache.get(user)
-
             let color
 
             if (regex.test(colorOption))
@@ -343,6 +380,34 @@ client.on('interactionCreate', async (interaction) => {
                     ephemeral: true
                 })
             }
+    }
+
+    if (commandName == "reset")
+    {
+        if (userColors[guild.id][member.id] != null)
+            {
+                let role = guild.roles.cache.find(x => x.name == userColors[guild.id][member.id])
+                member.roles.remove(role.id)
+                allRoles[guild.id][role.name]--
+                delete userColors[guild.id][member.id]
+
+                interaction.reply({
+                    embeds: [
+                        new DiscordJS.MessageEmbed()
+                        .setTitle("Reset your color!")
+                        .setColor(randomHex.generate())
+                        .setTimestamp()
+                    ],
+                    ephemeral: true
+                })
+            }
+    }
+
+    if (commandName == "invite")
+    {
+        interaction.reply({
+            content: "[Invite Me!](https://discord.com/api/oauth2/authorize?client_id=839151013167366154&permissions=275146385408&scope=bot%20applications.commands)"
+        })
     }
 
     // write all updates
