@@ -2,20 +2,21 @@
   "name": "color-bot",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index"
+    "start": "nodemon index.ts"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "color-namer": "^1.4.0",
-    "discord.js": "^12.5.3",
+    "discord.js": "^13.1.0",
     "dotenv": "^10.0.0",
     "is-hexcolor": "^1.0.0",
     "name-to-color": "^1.0.0",
     "nodemon": "^2.0.13",
+    "random-hex": "^1.0.2",
     "validate.io-color-hexadecimal": "^1.0.0"
   }
 }
