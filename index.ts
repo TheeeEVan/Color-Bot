@@ -59,6 +59,11 @@ client.on('ready', () => {
         name: 'invite',
         description: 'Sends Color Bot invite link.'
     })
+
+    commands?.create({
+        name: 'serverreset',
+        decription: 'Resets server database. Requires \'Manage Roles\''
+    })
 })
 
 client.on('messageCreate', (message) => {
@@ -109,11 +114,11 @@ client.on('messageCreate', (message) => {
                         .setDescription("List of Commands")
                         .setColor(randomHex.generate())
                         .addFields(
-                            { name: "Help", value: "This Command!"},
-                            { name: "Color", value: "Gives you a new color"},
-                            { name: "Reset", value: "Resets color to default (Or non color server assigned role)"},
-                            { name: "Invite", value: "Sends the link to invite this bot to your server!"},
-                            { name: "Settings", value: "Server settings for the bot. Can be viewed by anyone. Can be edited if you have Manage Roles. (This is planned but not yet implemeted)"},
+                            { name: "help", value: "This Command!"},
+                            { name: "color", value: "Gives you a new color"},
+                            { name: "reset", value: "Resets color to default (Or non color server assigned role)"},
+                            { name: "invite", value: "Sends the link to invite this bot to your server!"},
+                            { name: "settings", value: "Server settings for the bot. Can be viewed by anyone. Can be edited if you have Manage Roles. (This is planned but not yet implemeted)"},
                         )
                     ]
                 })
@@ -139,7 +144,17 @@ client.on('messageCreate', (message) => {
                 if (userColors[message.guild.id][message.member.id] != null)
                 {
                     let role = message.guild.roles.cache.find(x => x.name === userColors[message.guild.id][message.member.id])
-                    message.member.roles.remove(role.id)
+                    message.member.roles.remove(role.id).catch(() => {
+                        message.channel.send({
+                            embeds: [
+                                 new DiscordJS.MessageEmbed()
+                                 .setTitle("Something went wrong!")
+                                 .setDescription("Let the server owner that they may need to reset the server!")
+                                 .setColor("#f00")
+                            ]
+                        })
+                        return
+                    })
                     allRoles[message.guild.id][role.name]--
                 }
 
@@ -203,11 +218,29 @@ client.on('messageCreate', (message) => {
             }
         }
 
-        if (command[0] == "invite")
+        else if (command[0] == "invite")
         {
             message.reply({
                 content: "https://discord.com/api/oauth2/authorize?client_id=839151013167366154&permissions=275146385408&scope=bot%20applications.commands"
             })
+        }
+
+        else if (command[0] == "serverreset")
+        {
+            if (message.member.permissions.has("MANAGE_ROLES"))
+            {
+                allRoles[message.guild.id] = {}
+                userColors[message.guild.id] = {}
+            } else {
+                message.channel.send({
+                    embeds: [
+                        new DiscordJS.MessageEmbed()
+                        .setTitle("You do not have permission to do that!")
+                        .setDescription("Maybe ask the server owner to fix the issue...")
+                        .setColor("#f00")
+                    ]
+                })
+            }
         }
 
         // write all updates
@@ -300,7 +333,10 @@ client.on('interactionCreate', async (interaction) => {
                 embeds: [
                     new DiscordJS.MessageEmbed()
                         .setTitle("Color Bot Admin Help")
-                        .setDescription("Coming Soon!")
+                        .setDescription("List of Admin Commands!")
+                        .addFields(
+                            { name: "serverreset", value: "Resets the entire servers database. This requires you to manually delete all color roles! (Requires Manage Roles Permission)"}
+                        )
                         .setColor(randomHex.generate())
                 ],
                 components: []
@@ -327,7 +363,16 @@ client.on('interactionCreate', async (interaction) => {
                 if (userColors[guild.id][member.id] != null)
                 {
                     let role = guild.roles.cache.find(x => x.name === userColors[guild.id][member.user.id])
-                    member.roles.remove(role.id)
+                    member.roles.remove(role.id).catch(() => {
+                        interaction.reply({
+                            embeds: [
+                                new DiscordJS.MessageEmbed()
+                                .setTitle("Something went wrong!")
+                                .setDescription("Let the server owner that they may need to reset the server!")
+                                .setColor("#f00")
+                            ]
+                        })
+                    })
                     allRoles[guild.id][role.name]--
                 }
 
@@ -376,22 +421,22 @@ client.on('interactionCreate', async (interaction) => {
     if (commandName == "reset")
     {
         if (userColors[guild.id][member.id] != null)
-            {
-                let role = guild.roles.cache.find(x => x.name == userColors[guild.id][member.id])
-                member.roles.remove(role.id)
-                allRoles[guild.id][role.name]--
-                delete userColors[guild.id][member.id]
+        {
+            let role = guild.roles.cache.find(x => x.name == userColors[guild.id][member.id])
+            member.roles.remove(role.id)
+            allRoles[guild.id][role.name]--
+            delete userColors[guild.id][member.id]
 
-                interaction.reply({
-                    embeds: [
-                        new DiscordJS.MessageEmbed()
-                        .setTitle("Reset your color!")
-                        .setColor(randomHex.generate())
-                        .setTimestamp()
-                    ],
-                    ephemeral: true
-                })
-            }
+            interaction.reply({
+                embeds: [
+                    new DiscordJS.MessageEmbed()
+                    .setTitle("Reset your color!")
+                    .setColor(randomHex.generate())
+                    .setTimestamp()
+                ],
+                ephemeral: true
+            })
+        }
     }
 
     if (commandName == "invite")
