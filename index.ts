@@ -62,7 +62,7 @@ client.on('ready', () => {
 
     commands?.create({
         name: 'serverreset',
-        decription: 'Resets server database. Requires \'Manage Roles\''
+        description: 'Resets server database. Requires \'Manage Roles\''
     })
 })
 
